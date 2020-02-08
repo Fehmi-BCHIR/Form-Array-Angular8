@@ -7,7 +7,10 @@ import { FormBuilder, FormGroup, FormArray, Validators, FormControl } from '@ang
 })
 export class NestedFormComponent implements OnInit {
 
-  states: Array<String> = ['TN', 'FR', 'US', 'IN'];
+  states: Array<String> = ['AR', 'AL', 'CA', 'DC'];
+  fruits: Array<String> = ['Mango', 'Grapes', 'Strawberry', 'Oranges'];
+  favFruitsError: Boolean = true;
+  selectedFruitValues = [];
   nestedForm: FormGroup;
   constructor(private _fb: FormBuilder) { }
 
@@ -15,8 +18,17 @@ export class NestedFormComponent implements OnInit {
     this.nestedForm = this._fb.group({
       firstName: [null, [Validators.required, Validators.minLength(2)]],
       lastName: [null, Validators.required],
+      favFruits: this.addFruitsControls(),
       address: this._fb.array([this.addAddressGroup()])
     });
+  }
+
+  addFruitsControls() {
+    const arr = this.fruits.map(item => {
+      return this._fb.control(false);
+    });
+
+    return this._fb.array(arr);
   }
 
   addAddressGroup() {
@@ -25,7 +37,7 @@ export class NestedFormComponent implements OnInit {
       streetAddress: [null, Validators.required],
       city: [null, Validators.required],
       state: [null, Validators.required],
-      zipcode: [null, Validators.required]
+      zipcode: [null, [Validators.required, Validators.pattern('^[0-9]{5}$')]]
     });
   }
 
@@ -39,6 +51,9 @@ export class NestedFormComponent implements OnInit {
     return <FormArray>this.nestedForm.get('address');
   }
 
+  get fruitsArray() {
+    return <FormArray>this.nestedForm.get('favFruits');
+  }
   get firstName() {
     return this.nestedForm.get('firstName');
   }
@@ -47,10 +62,32 @@ export class NestedFormComponent implements OnInit {
     return this.nestedForm.get('lastName');
   }
 
+  checkFruitControlsTouched() {
+    let flg = false;
+    this.fruitsArray.controls.forEach(control => {
+      if (control.touched) {
+        flg = true;
+      }
+    });
+
+    return flg;
+  }
+
+  getSelectedFruitsValue() {
+    this.selectedFruitValues = [];
+    this.fruitsArray.controls.forEach((control, i) => {
+      if (control.value) {
+        this.selectedFruitValues.push(this.fruits[i]);
+      }
+    });
+
+    this.favFruitsError =  this.selectedFruitValues.length > 0 ? false : true;
+  }
 
   submitHandler() {
-    if (this.nestedForm.valid) {
-      console.log("success");
+    const newItem = this.selectedFruitValues;
+    if (this.nestedForm.valid && this.favFruitsError) {
+      console.log({...this.nestedForm.value, newItem});
     }
 
   }
